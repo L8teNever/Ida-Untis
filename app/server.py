@@ -47,7 +47,7 @@ def klassen_liste() -> list[dict]:
 
 @mcp.tool()
 def lehrer_liste() -> list[dict]:
-    """Listet alle Lehrkraefte der Schule mit Kuerzel, Vor- und Nachname auf."""
+    """Listet die Kuerzel aller Lehrkraefte der Schule auf (keine vollen Namen, Datenschutz)."""
     return client.list_lehrer()
 
 

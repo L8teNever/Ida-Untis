@@ -55,6 +55,12 @@ def _element_names(elements: Iterable[Any]) -> list[str]:
     return names
 
 
+def _teacher_codes(elements: Iterable[Any]) -> list[str]:
+    """Nur das Kuerzel, nie Vor-/Nachname -- aus Datenschutzgruenden geben wir
+    Lehrkraeften gegenueber Claude nie den vollen Namen weiter."""
+    return [str(_safe(el, "name", "")) or "?" for el in elements or []]
+
+
 def _resolve_id(list_result: Any, needle: str, kind: str) -> int:
     """Findet die id eines Elements (Klasse/Lehrer/Raum) anhand eines Namens.
 
@@ -98,11 +104,11 @@ def _serialize_period(period: Any) -> dict:
             "irregular": "geändert",
         }.get(code, code),
         "faecher": _element_names(_safe(period, "subjects", [])),
-        "lehrer": _element_names(_safe(period, "teachers", [])),
+        "lehrer": _teacher_codes(_safe(period, "teachers", [])),
         "klassen": _element_names(_safe(period, "klassen", [])),
         "raeume": _element_names(_safe(period, "rooms", [])),
     }
-    original_teachers = _element_names(_safe(period, "original_teachers", []))
+    original_teachers = _teacher_codes(_safe(period, "original_teachers", []))
     original_rooms = _element_names(_safe(period, "original_rooms", []))
     if original_teachers and original_teachers != entry["lehrer"]:
         entry["urspruenglicher_lehrer"] = original_teachers
@@ -171,16 +177,9 @@ class UntisClient:
             ]
 
     def list_lehrer(self) -> list[dict]:
+        """Nur Kuerzel -- keine vollen Namen (Datenschutz)."""
         with self._session() as s:
-            return [
-                {
-                    "id": t.id,
-                    "kuerzel": t.name,
-                    "vorname": _safe(t, "fore_name", ""),
-                    "nachname": _safe(t, "long_name", ""),
-                }
-                for t in s.teachers()
-            ]
+            return [{"kuerzel": t.name} for t in s.teachers()]
 
     def list_raeume(self) -> list[dict]:
         with self._session() as s:
@@ -252,8 +251,8 @@ class UntisClient:
                         "typ": _safe(sub, "type", ""),
                         "faecher": _element_names(_safe(sub, "subjects", [])),
                         "klassen": _element_names(klassen),
-                        "lehrer": _element_names(_safe(sub, "teachers", [])),
-                        "urspruenglicher_lehrer": _element_names(
+                        "lehrer": _teacher_codes(_safe(sub, "teachers", [])),
+                        "urspruenglicher_lehrer": _teacher_codes(
                             _safe(sub, "original_teachers", [])
                         ),
                         "raeume": _element_names(_safe(sub, "rooms", [])),

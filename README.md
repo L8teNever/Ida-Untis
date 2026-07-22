@@ -150,7 +150,7 @@ funktioniert aber unabhängig davon.
 | `aenderungen(von, bis)` | Nur geänderte Stunden (Raum-/Lehrerwechsel) |
 | `vertretungen(von, bis)` | Vertretungen, gefiltert auf die konfigurierte Klasse |
 | `klassen_liste()` | Alle Klassen der Schule (nur Namen/IDs, keine Stundenplandaten) |
-| `lehrer_liste()` | Alle Lehrkräfte der Schule |
+| `lehrer_liste()` | Kürzel aller Lehrkräfte der Schule (keine vollen Namen, Datenschutz) |
 | `raeume_liste()` | Alle Räume der Schule |
 | `faecher_liste()` | Alle Fächer der Schule |
 | `ferien_liste()` | Ferien/Feiertage |
