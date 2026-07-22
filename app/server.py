@@ -126,7 +126,16 @@ def main() -> None:
         settings.mcp_host,
         settings.mcp_port,
     )
-    uvicorn.run(app, host=settings.mcp_host, port=settings.mcp_port, log_level="info")
+    # access_log=False: uvicorn wuerde sonst jede Request-Zeile inkl. vollem
+    # Pfad loggen -- und damit ein per ?token= mitgeschicktes MCP_AUTH_TOKEN
+    # im Klartext in die Docker-Logs schreiben.
+    uvicorn.run(
+        app,
+        host=settings.mcp_host,
+        port=settings.mcp_port,
+        log_level="info",
+        access_log=False,
+    )
 
 
 if __name__ == "__main__":
