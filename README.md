@@ -49,6 +49,7 @@ cp .env.example .env
 | `UNTIS_SERVER` | Nur der Host, z.B. `nessa.webuntis.com` (aus der Browser-URL, wenn in WebUntis eingeloggt) |
 | `UNTIS_SCHOOL` | Schulname/-kürzel wie bei der Schulauswahl in WebUntis |
 | `UNTIS_USERNAME` / `UNTIS_PASSWORD` | Normaler WebUntis-Login |
+| `UNTIS_KLASSE` | Kürzel der einen Klasse, auf die der Server fest eingestellt ist (z.B. `1T`) -- alle Tools liefern ausschließlich Daten dieser Klasse |
 | `MCP_AUTH_TOKEN` | Langes Zufalls-Token, das Claude beim Verbinden mitschicken muss. Erzeugen mit `openssl rand -hex 32` |
 | `MCP_PORT` | Lokaler Port (Standard `8000`) |
 | `GITHUB_OWNER` | Dein GitHub-Benutzername in Kleinbuchstaben (für das Image aus GHCR) |
@@ -134,20 +135,27 @@ verwenden: `https://untis.deine-domain.de/mcp?token=<MCP_AUTH_TOKEN>`.
 
 ## Verfügbare Tools
 
+`stundenplan`, `ausfaelle`, `aenderungen` und `vertretungen` sind fest auf
+die in `UNTIS_KLASSE` konfigurierte Klasse eingestellt -- es gibt keinen
+Parameter, um eine andere Klasse abzufragen. Das ist bewusst so (Scope-Lock
+auf eine Klasse) und umgeht nebenbei auch ein WebUntis-Problem: manche
+Accounts haben für die generische "eigener Stundenplan"-Abfrage keine
+Berechtigung (Fehler `no right for timetable`), der Klassen-Stundenplan
+funktioniert aber unabhängig davon.
+
 | Tool | Zweck |
 |---|---|
-| `stundenplan(von, bis, klasse?, lehrer?, raum?)` | Kompletter Stundenplan im Zeitraum |
-| `ausfaelle(von, bis, klasse?, lehrer?)` | Nur ausgefallene Stunden |
-| `aenderungen(von, bis, klasse?, lehrer?)` | Nur geänderte Stunden (Raum-/Lehrerwechsel) |
-| `vertretungen(von, bis)` | Rohe schulweite Vertretungsliste |
-| `klassen_liste()` | Alle Klassen |
-| `lehrer_liste()` | Alle Lehrkräfte |
-| `raeume_liste()` | Alle Räume |
-| `faecher_liste()` | Alle Fächer |
+| `stundenplan(von, bis)` | Kompletter Stundenplan der konfigurierten Klasse im Zeitraum |
+| `ausfaelle(von, bis)` | Nur ausgefallene Stunden |
+| `aenderungen(von, bis)` | Nur geänderte Stunden (Raum-/Lehrerwechsel) |
+| `vertretungen(von, bis)` | Vertretungen, gefiltert auf die konfigurierte Klasse |
+| `klassen_liste()` | Alle Klassen der Schule (nur Namen/IDs, keine Stundenplandaten) |
+| `lehrer_liste()` | Alle Lehrkräfte der Schule |
+| `raeume_liste()` | Alle Räume der Schule |
+| `faecher_liste()` | Alle Fächer der Schule |
 | `ferien_liste()` | Ferien/Feiertage |
 
-Datumsangaben immer als `JJJJ-MM-TT`, z.B. `2026-07-21`. `klasse`/`lehrer`/
-`raum` können Kürzel oder Name sein (z.B. `"5A"` oder `"Müller"`).
+Datumsangaben immer als `JJJJ-MM-TT`, z.B. `2026-07-21`.
 
 ## Lokal testen ohne Cloudflare
 

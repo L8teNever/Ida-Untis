@@ -30,6 +30,7 @@ class Settings:
     untis_password: str
     untis_server: str
     untis_useragent: str
+    untis_klasse: str
 
     mcp_auth_token: str
     mcp_host: str
@@ -56,7 +57,8 @@ def load_settings() -> Settings:
             untis_username=_require("UNTIS_USERNAME"),
             untis_password=_require("UNTIS_PASSWORD"),
             untis_server=untis_server,
-            untis_useragent=_optional("UNTIS_USERAGENT", "Ida-Untis-MCP"),
+            untis_useragent=_optional("UNTIS_USERAGENT", "WebUntis"),
+            untis_klasse=_require("UNTIS_KLASSE"),
             mcp_auth_token=mcp_auth_token,
             mcp_host=_optional("MCP_HOST", "0.0.0.0"),
             mcp_port=int(_optional("MCP_PORT", "8000")),

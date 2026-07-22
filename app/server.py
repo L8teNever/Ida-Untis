@@ -9,7 +9,6 @@ kann. Der Endpunkt ist per Shared-Secret-Token abgesichert (siehe app/auth.py).
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 import uvicorn
 from mcp.server.fastmcp import FastMCP
@@ -71,51 +70,40 @@ def ferien_liste() -> list[dict]:
 
 
 @mcp.tool()
-def stundenplan(
-    von: str,
-    bis: str,
-    klasse: Optional[str] = None,
-    lehrer: Optional[str] = None,
-    raum: Optional[str] = None,
-) -> list[dict]:
-    """Kompletter Stundenplan fuer einen Zeitraum.
+def stundenplan(von: str, bis: str) -> list[dict]:
+    """Kompletter Stundenplan fuer einen Zeitraum, ausschliesslich fuer die
+    in UNTIS_KLASSE konfigurierte Klasse -- es kann keine andere Klasse
+    abgefragt werden.
 
     von/bis: Datum im Format JJJJ-MM-TT (z.B. 2026-07-21).
-    Genau eines von klasse/lehrer/raum angeben (Name oder Kuerzel), oder alle
-    weglassen fuer den Stundenplan des in UNTIS_USERNAME hinterlegten Kontos.
     Jeder Eintrag enthaelt Status (regulaer/ausgefallen/geaendert), Fach,
     Lehrer, Klasse und Raum -- inklusive urspruenglichem Lehrer/Raum bei
     Aenderungen.
     """
-    return client.stundenplan(von, bis, klasse, lehrer, raum)
+    return client.stundenplan(von, bis)
 
 
 @mcp.tool()
-def ausfaelle(
-    von: str, bis: str, klasse: Optional[str] = None, lehrer: Optional[str] = None
-) -> list[dict]:
-    """Nur die ausgefallenen Stunden in einem Zeitraum (Format JJJJ-MM-TT).
-
-    klasse/lehrer optional zum Filtern auf eine Klasse oder Lehrkraft.
+def ausfaelle(von: str, bis: str) -> list[dict]:
+    """Nur die ausgefallenen Stunden der konfigurierten Klasse in einem
+    Zeitraum (Format JJJJ-MM-TT).
     """
-    return client.ausfaelle(von, bis, klasse, lehrer)
+    return client.ausfaelle(von, bis)
 
 
 @mcp.tool()
-def aenderungen(
-    von: str, bis: str, klasse: Optional[str] = None, lehrer: Optional[str] = None
-) -> list[dict]:
-    """Nur die geaenderten Stunden (Raum-/Lehrerwechsel, Verlegung) in einem
-    Zeitraum. Enthaelt jeweils sowohl den neuen als auch den urspruenglichen
-    Lehrer/Raum.
+def aenderungen(von: str, bis: str) -> list[dict]:
+    """Nur die geaenderten Stunden (Raum-/Lehrerwechsel, Verlegung) der
+    konfigurierten Klasse in einem Zeitraum. Enthaelt jeweils sowohl den
+    neuen als auch den urspruenglichen Lehrer/Raum.
     """
-    return client.aenderungen(von, bis, klasse, lehrer)
+    return client.aenderungen(von, bis)
 
 
 @mcp.tool()
 def vertretungen(von: str, bis: str) -> list[dict]:
-    """Rohe schulweite Vertretungsliste von WebUntis fuer einen Zeitraum
-    (alle Klassen, Format JJJJ-MM-TT).
+    """Vertretungsliste von WebUntis fuer einen Zeitraum (Format JJJJ-MM-TT),
+    gefiltert auf die in UNTIS_KLASSE konfigurierte Klasse.
     """
     return client.vertretungen(von, bis)
 

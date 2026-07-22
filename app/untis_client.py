@@ -118,6 +118,19 @@ class UntisClient:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._lock = threading.Lock()
+        self._klasse_id: Optional[int] = None
+
+    def _resolve_klasse_id(self, s: Any) -> int:
+        """Löst UNTIS_KLASSE einmalig zu einer id auf und cached sie.
+
+        Die id einer Klasse ändert sich nicht zwischen Sessions, daher muss
+        s.klassen() nicht bei jedem Aufruf erneut abgefragt werden.
+        """
+        if self._klasse_id is None:
+            self._klasse_id = _resolve_id(
+                s.klassen(), self._settings.untis_klasse, "Klasse"
+            )
+        return self._klasse_id
 
     @contextmanager
     def _session(self) -> Iterator[Any]:
@@ -194,73 +207,51 @@ class UntisClient:
                 for h in s.holidays()
             ]
 
-    def _timetable(
-        self,
-        von: str,
-        bis: str,
-        klasse: Optional[str],
-        lehrer: Optional[str],
-        raum: Optional[str],
-    ) -> list[dict]:
+    def _timetable(self, von: str, bis: str) -> list[dict]:
+        """Stundenplan ausschliesslich fuer die in UNTIS_KLASSE konfigurierte
+        Klasse. Kein Fallback auf my_timetable (manche WebUntis-Accounts
+        haben dafuer keine Berechtigung -- Fehler "no right for timetable")
+        und keine Moeglichkeit, eine andere Klasse abzufragen.
+        """
         start = _parse_date(von, "von")
         end = _parse_date(bis, "bis")
         if end < start:
             raise UntisError("'bis' darf nicht vor 'von' liegen.")
 
-        filters = [f for f in (klasse, lehrer, raum) if f]
-        if len(filters) > 1:
-            raise UntisError("Bitte nur eines von klasse/lehrer/raum angeben.")
-
         with self._session() as s:
-            if klasse:
-                element_id = _resolve_id(s.klassen(), klasse, "Klasse")
-                periods = s.timetable(start=start, end=end, klasse=element_id)
-            elif lehrer:
-                element_id = _resolve_id(s.teachers(), lehrer, "Lehrer")
-                periods = s.timetable(start=start, end=end, teacher=element_id)
-            elif raum:
-                element_id = _resolve_id(s.rooms(), raum, "Raum")
-                periods = s.timetable(start=start, end=end, room=element_id)
-            else:
-                periods = s.my_timetable(start=start, end=end)
-
+            klasse_id = self._resolve_klasse_id(s)
+            periods = s.timetable(start=start, end=end, klasse=klasse_id)
             return [_serialize_period(p) for p in periods]
 
-    def stundenplan(
-        self,
-        von: str,
-        bis: str,
-        klasse: Optional[str] = None,
-        lehrer: Optional[str] = None,
-        raum: Optional[str] = None,
-    ) -> list[dict]:
-        return self._timetable(von, bis, klasse, lehrer, raum)
+    def stundenplan(self, von: str, bis: str) -> list[dict]:
+        return self._timetable(von, bis)
 
-    def ausfaelle(
-        self, von: str, bis: str, klasse: Optional[str] = None, lehrer: Optional[str] = None
-    ) -> list[dict]:
-        periods = self._timetable(von, bis, klasse, lehrer, None)
+    def ausfaelle(self, von: str, bis: str) -> list[dict]:
+        periods = self._timetable(von, bis)
         return [p for p in periods if p["status"] == "ausgefallen"]
 
-    def aenderungen(
-        self, von: str, bis: str, klasse: Optional[str] = None, lehrer: Optional[str] = None
-    ) -> list[dict]:
-        periods = self._timetable(von, bis, klasse, lehrer, None)
+    def aenderungen(self, von: str, bis: str) -> list[dict]:
+        periods = self._timetable(von, bis)
         return [p for p in periods if p["status"] == "geändert"]
 
     def vertretungen(self, von: str, bis: str) -> list[dict]:
+        """Vertretungen, gefiltert auf die in UNTIS_KLASSE konfigurierte Klasse."""
         start = _parse_date(von, "von")
         end = _parse_date(bis, "bis")
         with self._session() as s:
+            klasse_id = self._resolve_klasse_id(s)
             subs = s.substitutions(start=start, end=end)
             out = []
             for sub in subs:
+                klassen = _safe(sub, "klassen", [])
+                if not any(_safe(k, "id", None) == klasse_id for k in klassen):
+                    continue
                 out.append(
                     {
                         "datum": _safe(sub, "start").isoformat() if _safe(sub, "start", None) else None,
                         "typ": _safe(sub, "type", ""),
                         "faecher": _element_names(_safe(sub, "subjects", [])),
-                        "klassen": _element_names(_safe(sub, "klassen", [])),
+                        "klassen": _element_names(klassen),
                         "lehrer": _element_names(_safe(sub, "teachers", [])),
                         "urspruenglicher_lehrer": _element_names(
                             _safe(sub, "original_teachers", [])
