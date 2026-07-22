@@ -16,7 +16,8 @@ services:
       UNTIS_USERNAME: ${UNTIS_USERNAME:?Bitte UNTIS_USERNAME in .env setzen}
       UNTIS_PASSWORD: ${UNTIS_PASSWORD:?Bitte UNTIS_PASSWORD in .env setzen}
       UNTIS_SERVER: ${UNTIS_SERVER:?Bitte UNTIS_SERVER in .env setzen}
-      UNTIS_USERAGENT: ${UNTIS_USERAGENT:-Ida-Untis-MCP}
+      UNTIS_USERAGENT: ${UNTIS_USERAGENT:-WebUntis}
+      UNTIS_KLASSE: ${UNTIS_KLASSE:?Bitte UNTIS_KLASSE in .env setzen}
       MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:?Bitte MCP_AUTH_TOKEN in .env setzen}
       MCP_HOST: 0.0.0.0
       MCP_PORT: 8000
